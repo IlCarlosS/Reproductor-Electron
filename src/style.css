@@ -1,0 +1,49 @@
+@import "tailwindcss";
+
+@theme {
+  /* Al definirlo aquí, Tailwind genera automáticamente la clase text-accent */
+  --color-accent: #FFC107;
+  --color-bg: #1E2A3A;
+  --color-border: #4A4D4E;
+  --color-muted: #B0BEC5;
+  --color-negro: #0B0F14;
+  --color-blanco: #F1F5F9;
+}
+
+:root {
+  --color-accent: #FFC107;
+  --color-bg: #1E2A3A;
+  --color-border: #4A4D4E;
+  --color-muted: #B0BEC5;
+  --color-negro: #0B0F14; /* Un negro azulado muy elegante */
+  --color-blanco: #F1F5F9; /* Un blanco roto tipo "cloud" */
+  --neu-dark: #161f2b;
+  --neu-light: #263549;
+}
+
+@layer base {
+  body {
+    @apply bg-[var(--color-bg)] text-[var(--color-blanco)];
+    font-family: 'Ubuntu', sans-serif;
+  }
+}
+
+@layer components {
+  .neu-flat {
+    background: var(--color-bg);
+    box-shadow: 6px 6px 12px var(--neu-dark), 
+               -6px -6px 12px var(--neu-light);
+  }
+
+  .neu-pressed {
+    background: var(--color-bg);
+    box-shadow: inset 4px 4px 8px var(--neu-dark), 
+                inset -4px -4px 8px var(--neu-light);
+  }
+
+  .neu-hover:hover {
+    box-shadow: 4px 4px 8px var(--neu-dark), 
+               -4px -4px 8px var(--neu-light);
+    transition: all 0.2s ease-in-out;
+  }
+}
