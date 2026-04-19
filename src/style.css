@@ -47,3 +47,28 @@
     transition: all 0.2s ease-in-out;
   }
 }
+
+/* Estilo para que el slider se vea limpio */
+.custom-slider {
+  -webkit-appearance: none;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  outline: none;
+}
+
+.custom-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: #FFC107; /* Tu color accent */
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(FF, C1, 07, 0.5); /* Resplandor acorde al visualizador */
+  transition: transform 0.2s ease;
+}
+
+.custom-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}

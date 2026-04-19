@@ -1,5 +1,6 @@
 <script setup>
 import { useMusicStore } from '../store/musicStore';
+import VisualizerCanvas from '../components/VisualizerCanvas.vue';
 
 const musicStore = useMusicStore();
 
@@ -30,58 +31,94 @@ const handleSeek = (e) => {
       </svg>
     </button>
     
-    <div class="flex-1 w-full flex flex-col items-center justify-center relative">
-      
-      <div class="absolute w-full flex items-center justify-center gap-1 opacity-40 px-20">
-        <div v-for="h in [30,50,80,40,90,60,30,70,100,60,40,80]" :key="h" class="w-1.5 bg-accent rounded-full" :style="{height: h + 'px'}"></div>
-        <div class="w-80"></div> <div v-for="h in [80,40,60,100,70,30,60,90,40,80,50,30]" :key="h + 'r'" class="w-1.5 bg-accent rounded-full" :style="{height: h + 'px'}"></div>
-      </div>
+    <div class="flex-1 w-full flex flex-col items-center justify-center relative overflow-hidden">
+      <div class="relative w-full flex items-center justify-center h-80">
+        
+        <div class="absolute inset-0 w-full h-full pointer-events-none">
+          <VisualizerCanvas />
+        </div>
 
-      <div class="w-72 h-72 rounded-full neu-flat p-6 relative z-10">
-        <div class="w-full h-full rounded-full overflow-hidden border-4 border-bg shadow-inner">
-          <img v-if="musicStore.currentSong.cover" :src="musicStore.currentSong.cover" class="w-full h-full object-cover" />
-          <div v-else class="w-full h-full flex items-center justify-center bg-negro text-muted">
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
+        <div class="w-72 h-72 rounded-full neu-flat p-6 relative z-10 transform hover:scale-105 transition-transform duration-500">
+          <div class="w-full h-full rounded-full overflow-hidden border-4 border-bg shadow-inner relative">
+            <img v-if="musicStore.currentSong.cover" :src="musicStore.currentSong.cover" class="w-full h-full object-cover" />
+            <div v-else class="w-full h-full flex items-center justify-center bg-negro text-muted">
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="mt-12 text-center">
-        <h2 class="text-3xl font-bold text-accent mb-2 uppercase tracking-widest">{{ musicStore.currentSong.name }}</h2>
-        <p class="text-muted font-medium tracking-tight">{{ musicStore.currentSong.artist }}</p>
+      <div class="mt-8 text-center px-10 z-20 max-w-4xl">
+        <h2 class="text-3xl font-bold text-accent mb-2 uppercase tracking-[0.2em] truncate drop-shadow-md">
+          {{ musicStore.currentSong.name }}
+        </h2>
+        <p class="text-muted font-medium tracking-widest opacity-80">
+          {{ musicStore.currentSong.artist }}
+        </p>
       </div>
 
-      <div class="mt-10">
-        <button class="px-8 py-3 rounded-2xl neu-pressed text-sm font-semibold flex items-center gap-3 hover:neu-flat transition-all">
+      <div class="mt-8 z-20">
+        <button class="px-8 py-3 rounded-2xl neu-pressed text-sm font-semibold flex items-center gap-3 hover:neu-flat transition-all group">
           See Lyrics
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h10" /><path d="M8 12h10" /><path d="M8 18h5" /><path d="M3 12h.01" /><path d="M3 6h.01" /><path d="M3 18h.01" /></svg>
+          <svg class="group-hover:translate-x-1 transition-transform" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h10" /><path d="M8 12h10" /><path d="M8 18h5" /><path d="M3 12h.01" /><path d="M3 6h.01" /><path d="M3 18h.01" /></svg>
         </button>
       </div>
     </div>
 
     <div class="w-full max-w-4xl flex flex-col items-center gap-10">
-      
-      <div class="flex items-center gap-8">
+      <div class="flex items-center justify-between w-full">
         <button @click="musicStore.shuffleSongs()" class="p-4 rounded-full neu-flat hover:text-accent transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 4l3 3l-3 3" /><path d="M18 20l3 -3l-3 -3" /><path d="M3 7h3a5 5 0 0 1 4.45 2.74" /><path d="M21 7h-5a5 5 0 0 0 -4.45 2.74" /><path d="M12 14.26a5 5 0 0 1 4.45 2.74h5" /><path d="M3 17h3a5 5 0 0 0 4.45 -2.74" /></svg>
         </button>
+
+        <div class="flex items-center gap-8">
+          <button @click="musicStore.prevSong()" class="p-5 rounded-full neu-flat hover:text-accent transition-all active:scale-95">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12L19 4V20ZM5 19V5H7V19H5Z"/></svg>
+          </button>
+
+          <button @click="musicStore.togglePlay()" class="p-9 rounded-full neu-flat text-accent active:neu-pressed transition-all transform hover:scale-105">
+            <svg v-if="!musicStore.isPlaying" width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            <svg v-else width="40" height="40" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+          </button>
+
+          <button @click="musicStore.nextSong()" class="p-5 rounded-full neu-flat hover:text-accent transition-all active:scale-95">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4L15 12L5 20V4ZM17 5V19H19V5H17Z"/></svg>
+          </button>
+        </div>
+
+        <button 
+          @click="musicStore.toggleRepeatMode()" 
+          class="p-4 rounded-full neu-flat transition-all relative group"
+          :class="musicStore.repeatMode !== 'none' ? 'text-accent shadow-inner' : 'text-text'"
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3" />
+            <path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3" />
+          </svg>
+          <span v-if="musicStore.repeatMode === 'one'" class="absolute -top-1 -right-1 text-[10px] font-bold bg-accent text-bg px-1 rounded-full">1</span>
+        </button>
+      </div>
+
+      <div class="flex items-center gap-4 w-64 mt-4">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50">
+          <path d="M11 5L6 9H2V15H6L11 19V5Z" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
         
-        <button @click="musicStore.prevSong()" class="p-5 rounded-full neu-flat hover:text-accent">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 20L9 12L19 4V20ZM5 19V5H7V19H5Z"/></svg>
-        </button>
+        <div class="flex-1 h-3 rounded-full neu-inset px-2 flex items-center">
+          <input 
+            type="range" 
+            min="0" 
+            max="1" 
+            step="0.01" 
+            v-model="musicStore.volume" 
+            @input="musicStore.updateVolume($event.target.value)"
+            class="w-full bg-transparent appearance-none cursor-pointer accent-accent custom-slider"
+          >
+        </div>
 
-        <button @click="musicStore.togglePlay()" class="p-8 rounded-full neu-flat text-accent active:neu-pressed transition-all">
-          <svg v-if="!musicStore.isPlaying" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-          <svg v-else width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
-        </button>
-
-        <button @click="musicStore.nextSong()" class="p-5 rounded-full neu-flat hover:text-accent">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M5 4L15 12L5 20V4ZM17 5V19H19V5H17Z"/></svg>
-        </button>
-
-        <button class="p-4 rounded-full neu-flat hover:text-accent">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v-3a3 3 0 0 1 3 -3h13m-3 -3l3 3l-3 3" /><path d="M20 12v3a3 3 0 0 1 -3 3h-13m3 3l-3 -3l3 -3" /></svg>
-        </button>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="opacity-50">
+          <path d="M11 5L6 9H2V15H6L11 19V5Z" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+        </svg>
       </div>
 
       <div class="w-full group">

@@ -1,22 +1,26 @@
-//musicStore.js
+// musicStore.js
 import { defineStore } from 'pinia';
-// Creamos la instancia de audio fuera del objeto para evitar problemas de reactividad de Vue
+
+// Mantenemos UNA SOLA instancia para todo el ciclo de vida de la app
 const audio = new Audio();
+let audioCtx = null;
+let analyser = null;
+let source = null;
 
 export const useMusicStore = defineStore('music', {
   state: () => ({
     songs: [],
-    folderPath: null, // <--- Faltaba esto
+    folderPath: null,
     currentSong: null,
     isPlaying: false,
     currentTime: 0,
     duration: 0,
     volume: 0.7,
     isFullScreen: false,
+    repeatMode: 'all', // Opciones: 'none', 'all', 'one'
   }),
 
   actions: {
-    // NUEVAS/RECUPERADAS: Para que ListaSong.vue no falle
     setSongs(songs) {
       this.songs = songs;
     },
@@ -25,7 +29,7 @@ export const useMusicStore = defineStore('music', {
       this.folderPath = path;
     },
 
-    // LÓGICA DE AUDIO
+    // LÓGICA DE AUDIO UNIFICADA
     init() {
       audio.ontimeupdate = () => {
         this.currentTime = audio.currentTime;
@@ -34,11 +38,48 @@ export const useMusicStore = defineStore('music', {
         this.duration = audio.duration;
       };
       audio.onended = () => {
-        this.nextSong();
+        if (this.repeatMode === 'one') {
+          audio.currentTime = 0;
+          audio.play();
+        } else if (this.repeatMode === 'all') {
+          this.nextSong();
+        } else {
+          // 'none': si es la última canción, paramos. Si no, siguiente.
+          const index = this.songs.findIndex(s => s.path === this.currentSong?.path);
+          if (index < this.songs.length - 1) {
+            this.nextSong();
+          } else {
+            this.isPlaying = false;
+          }
+        }
       };
       audio.volume = this.volume;
     },
 
+    getAnalyser() {
+      if (!analyser) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 256;
+
+        // Conectamos el ÚNICO objeto audio al analizador
+        source = audioCtx.createMediaElementSource(audio);
+        source.connect(analyser);
+        analyser.connect(audioCtx.destination);
+      }
+      
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      return analyser;
+    },
+
+    // Retornamos la instancia única para cualquier componente que la necesite
+    getNativeAudio() {
+      return audio;
+    },
+    
     setCurrentSong(song) {
       if (this.currentSong?.path === song.path) {
         this.togglePlay();
@@ -47,15 +88,12 @@ export const useMusicStore = defineStore('music', {
       
       this.currentSong = song;
 
-      // 1. Transformamos "D:\Music\..." en "D/Music/..." 
-      // (Quitamos los ":" para que no rompa la URL de Chromium)
+      // Limpieza de ruta para Electron
       const pathSinPuntos = song.path.replace(':', '');
       const pathConBarras = pathSinPuntos.replaceAll('\\', '/');
 
-      // 2. Resultado final: atom://D/Music/Musica/archivo.flac
+      // Cargamos la fuente en nuestra instancia única
       audio.src = `atom://${pathConBarras}`;
-      
-      console.log("Intentando reproducir:", audio.src); // Para que verifiques en consola
       
       audio.play().catch(e => {
         console.error("Error de reproducción:", e);
@@ -66,6 +104,9 @@ export const useMusicStore = defineStore('music', {
 
     togglePlay() {
       if (!this.currentSong) return;
+      
+      // Inicializamos el analizador si no existe al primer play
+      this.getAnalyser();
       
       if (this.isPlaying) {
         audio.pause();
@@ -81,6 +122,7 @@ export const useMusicStore = defineStore('music', {
       }
     },
 
+    // Unificamos el manejo de volumen
     updateVolume(value) {
       this.volume = parseFloat(value);
       audio.volume = this.volume;
@@ -100,16 +142,7 @@ export const useMusicStore = defineStore('music', {
       this.setCurrentSong(this.songs[prevIndex]);
     },
 
-    sortAZ() {
-      this.songs.sort((a, b) => a.name.localeCompare(b.name));
-    },
-
-    sortZA() {
-      this.songs.sort((a, b) => b.name.localeCompare(a.name));
-    },
-
     shuffleSongs() {
-      // Algoritmo Fisher-Yates para un mezclado puramente aleatorio
       for (let i = this.songs.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [this.songs[i], this.songs[j]] = [this.songs[j], this.songs[i]];
@@ -118,6 +151,12 @@ export const useMusicStore = defineStore('music', {
     
     toggleFullScreen() {
       this.isFullScreen = !this.isFullScreen;
+    },
+
+    toggleRepeatMode() {
+      const modes = ['none', 'all', 'one'];
+      const currentIndex = modes.indexOf(this.repeatMode);
+      this.repeatMode = modes[(currentIndex + 1) % modes.length];
     },
   }
 });
