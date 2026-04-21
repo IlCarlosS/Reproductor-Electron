@@ -2,11 +2,14 @@
 <script setup>
 import ListaSong from './views/ListaSong.vue';
 import FullReproductor from './views/FullReproductor.vue';
+import { onMounted } from 'vue';
 import { useMusicStore } from './store/musicStore';
 
-// ¡ESTA ES LA LÍNEA QUE FALTABA! 
 // Sin esto, la plantilla no sabe qué es "musicStore"
 const musicStore = useMusicStore();
+onMounted(() => {
+  musicStore.initStore();
+});
 </script>
 
 <template>

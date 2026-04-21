@@ -31,20 +31,29 @@
 @layer components {
   .neu-flat {
     background: var(--color-bg);
-    box-shadow: 6px 6px 12px var(--neu-dark), 
-               -6px -6px 12px var(--neu-light);
+    /* Sombras más sutiles para elementos de lista */
+    box-shadow: 4px 4px 10px var(--neu-dark), 
+               -4px -4px 10px var(--neu-light);
+    /* Evita que las sombras se corten visualmente */
+    margin: 4px; 
   }
 
   .neu-pressed {
     background: var(--color-bg);
-    box-shadow: inset 4px 4px 8px var(--neu-dark), 
-                inset -4px -4px 8px var(--neu-light);
+    box-shadow: inset 2px 2px 5px var(--neu-dark), 
+                inset -2px -2px 5px var(--neu-light);
+  }
+
+  /* Mejora de la transición: debe estar en la clase base, no solo en hover */
+  .neu-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .neu-hover:hover {
-    box-shadow: 4px 4px 8px var(--neu-dark), 
-               -4px -4px 8px var(--neu-light);
-    transition: all 0.2s ease-in-out;
+    /* En Neumorfismo, el hover suele "elevar" más el objeto o hundirlo */
+    transform: translateY(-2px);
+    box-shadow: 8px 8px 16px var(--neu-dark), 
+               -8px -8px 16px var(--neu-light);
   }
 }
 
@@ -71,4 +80,13 @@
 
 .custom-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
+}
+
+@keyframes vinyl-spin { /*animación disco*/
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-vinyl {
+  animation: vinyl-spin 7s linear infinite;
 }

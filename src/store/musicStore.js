@@ -1,7 +1,7 @@
 // musicStore.js
 import { defineStore } from 'pinia';
+import { scanFolder } from '../services/scanner';
 
-// Mantenemos UNA SOLA instancia para todo el ciclo de vida de la app
 const audio = new Audio();
 let audioCtx = null;
 let analyser = null;
@@ -18,42 +18,126 @@ export const useMusicStore = defineStore('music', {
     volume: 0.7,
     isFullScreen: false,
     repeatMode: 'all', // Opciones: 'none', 'all', 'one'
+    currentSong: null,
+    folderPath: null,
   }),
 
   actions: {
+    async setFolderPath(path) {
+      this.folderPath = path;
+      // Guardamos la carpeta en el JSON inmediatamente
+      await window.electronAPI.saveSettings({ lastFolder: path });
+    },
     setSongs(songs) {
       this.songs = songs;
     },
-    
-    setFolderPath(path) {
-      this.folderPath = path;
-    },
-
     // LÓGICA DE AUDIO UNIFICADA
-    init() {
-      audio.ontimeupdate = () => {
-        this.currentTime = audio.currentTime;
-      };
-      audio.onloadedmetadata = () => {
-        this.duration = audio.duration;
-      };
-      audio.onended = () => {
-        if (this.repeatMode === 'one') {
-          audio.currentTime = 0;
-          audio.play();
-        } else if (this.repeatMode === 'all') {
-          this.nextSong();
-        } else {
-          // 'none': si es la última canción, paramos. Si no, siguiente.
-          const index = this.songs.findIndex(s => s.path === this.currentSong?.path);
-          if (index < this.songs.length - 1) {
-            this.nextSong();
-          } else {
-            this.isPlaying = false;
+    async init() {
+      // 1. Configuramos eventos de audio
+      audio.ontimeupdate = () => { this.currentTime = audio.currentTime; };
+      audio.onloadedmetadata = () => { this.duration = audio.duration; };
+      audio.onended = () => { this.nextSong(); };
+      
+      // 2. Cargamos persistencia
+      const settings = await window.electronAPI.getSettings();
+      
+      if (settings.volume !== undefined) {
+        this.volume = settings.volume;
+        audio.volume = this.volume;
+      }
+
+      if (settings.lastFolder) {
+        this.folderPath = settings.lastFolder;
+        // Escaneo profundo automático
+        const results = await scanFolder(settings.lastFolder);
+        this.songs = results;
+
+        // 3. Recuperar última canción (SIN reproducir automáticamente)
+        if (settings.lastSongPath && this.songs.length > 0) {
+          const savedSong = this.songs.find(s => s.path === settings.lastSongPath);
+          if (savedSong) {
+            this.loadSong(savedSong, false); // false = no autoplay
           }
         }
-      };
-      audio.volume = this.volume;
+      }
+    },
+
+    async initStore() {
+      const settings = await window.electronAPI.getSettings();
+      
+      if (settings.volume !== undefined) {
+        this.volume = settings.volume;
+        // Asignar el volumen al objeto audio directamente también
+        const audio = this.getNativeAudio();
+        audio.volume = this.volume;
+      }
+
+      if (settings.lastFolder) {
+        this.folderPath = settings.lastFolder;
+        
+        // 1. Escaneamos para recuperar la lista de canciones
+        const results = await scanFolder(settings.lastFolder);
+        this.songs = results;
+
+        // 2. Solo si hay canciones, buscamos la última reproducida
+        if (settings.lastSongPath && this.songs.length > 0) {
+          const savedSong = this.songs.find(s => s.path === settings.lastSongPath);
+          if (savedSong) {
+            // Usamos loadSong con false para no disparar el Play automático
+            this.loadSong(savedSong, false); 
+          }
+        }
+      }
+    },
+
+    // 2. LÓGICA DE CARGA Y REPRODUCCIÓN (UNIFICADA)
+    async loadFolder(path) {
+      this.folderPath = path;
+      await window.electronAPI.saveSettings({ lastFolder: path });
+      const results = await scanFolder(path);
+      this.songs = results;
+    },
+
+    // Esta función hace todo: guarda, formatea y suena
+    setCurrentSong(song) {
+      if (this.currentSong?.path === song.path) {
+        this.togglePlay();
+        return;
+      }
+      this.loadSong(song, true);
+    },
+
+    loadSong(song, shouldPlay = true) {
+      this.currentSong = song;
+      // Guardamos la canción en el JSON sin borrar la carpeta (gracias al spread en main.js)
+      window.electronAPI.saveSettings({ lastSongPath: song.path });
+
+      const pathSinPuntos = song.path.replace(':', '');
+      const pathConBarras = pathSinPuntos.replaceAll('\\', '/');
+      audio.src = `atom://${pathConBarras}`;
+      
+      if (shouldPlay) {
+        audio.play().catch(e => {
+          if (e.name !== 'AbortError') console.error("Error play:", e);
+        });
+        this.isPlaying = true;
+      } else {
+        this.isPlaying = false;
+      }
+    },
+
+    togglePlay() {
+      if (!this.currentSong) return;
+      this.getAnalyser();
+      
+      if (this.isPlaying) {
+        audio.pause();
+      } else {
+        audio.play().catch(e => {
+          if (e.name !== 'AbortError') console.error("Error al reanudar:", e);
+        });
+      }
+      this.isPlaying = !this.isPlaying;
     },
 
     getAnalyser() {
@@ -61,17 +145,11 @@ export const useMusicStore = defineStore('music', {
         audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         analyser = audioCtx.createAnalyser();
         analyser.fftSize = 256;
-
-        // Conectamos el ÚNICO objeto audio al analizador
         source = audioCtx.createMediaElementSource(audio);
         source.connect(analyser);
         analyser.connect(audioCtx.destination);
       }
-      
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
-      
+      if (audioCtx.state === 'suspended') audioCtx.resume();
       return analyser;
     },
 
@@ -80,40 +158,23 @@ export const useMusicStore = defineStore('music', {
       return audio;
     },
     
-    setCurrentSong(song) {
-      if (this.currentSong?.path === song.path) {
-        this.togglePlay();
-        return;
-      }
-      
+    // Función auxiliar para no repetir código
+    loadSong(song, shouldPlay) {
       this.currentSong = song;
+      window.electronAPI.saveSettings({ lastSongPath: song.path });
 
-      // Limpieza de ruta para Electron
       const pathSinPuntos = song.path.replace(':', '');
       const pathConBarras = pathSinPuntos.replaceAll('\\', '/');
-
-      // Cargamos la fuente en nuestra instancia única
       audio.src = `atom://${pathConBarras}`;
       
-      audio.play().catch(e => {
-        console.error("Error de reproducción:", e);
-      });
-      
-      this.isPlaying = true;
-    },
-
-    togglePlay() {
-      if (!this.currentSong) return;
-      
-      // Inicializamos el analizador si no existe al primer play
-      this.getAnalyser();
-      
-      if (this.isPlaying) {
-        audio.pause();
+      if (shouldPlay) {
+        this.isPlaying = true;
+        audio.play().catch(e => {
+          if (e.name !== 'AbortError') console.error("Error de reproducción:", e);
+        });
       } else {
-        audio.play().catch(e => console.error("Error al reanudar:", e));
+        this.isPlaying = false;
       }
-      this.isPlaying = !this.isPlaying;
     },
 
     seek(time) {
@@ -126,6 +187,7 @@ export const useMusicStore = defineStore('music', {
     updateVolume(value) {
       this.volume = parseFloat(value);
       audio.volume = this.volume;
+      window.electronAPI.saveSettings({ volume: this.volume });
     },
 
     nextSong() {

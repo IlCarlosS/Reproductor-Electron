@@ -39,10 +39,21 @@ const handleSeek = (e) => {
         </div>
 
         <div class="w-72 h-72 rounded-full neu-flat p-6 relative z-10 transform hover:scale-105 transition-transform duration-500">
-          <div class="w-full h-full rounded-full overflow-hidden border-4 border-bg shadow-inner relative">
-            <img v-if="musicStore.currentSong.cover" :src="musicStore.currentSong.cover" class="w-full h-full object-cover" />
+          <div 
+            class="w-full h-full rounded-full overflow-hidden border-4 border-bg shadow-inner relative animate-vinyl"
+            :style="{ animationPlayState: musicStore.isPlaying ? 'running' : 'paused' }"
+          >
+            <img 
+              v-if="musicStore.currentSong.cover" 
+              :src="musicStore.currentSong.cover" 
+              class="w-full h-full object-cover" 
+            />
+            
             <div v-else class="w-full h-full flex items-center justify-center bg-negro text-muted">
-              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" /><path d="M9 17v-13h10v13" /><path d="M9 8h10" /></svg>
+              <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M9 17a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+                <path d="M9 17v-13h10v13" /><path d="M9 8h10" />
+              </svg>
             </div>
           </div>
         </div>

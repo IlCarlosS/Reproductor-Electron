@@ -6,9 +6,12 @@ const mm = require('music-metadata');
 
 contextBridge.exposeInMainWorld('electronAPI', {
   selectFolder: () => ipcRenderer.invoke('select-folder'),
+  scanDirectory: (path) => ipcRenderer.invoke('scan-directory', path),
   readdir: (p) => fs.readdirSync(p),
   basename: (p, ext) => path.basename(p, ext),
   join: (...args) => path.join(...args),
+  getSettings: () => ipcRenderer.invoke('get-settings'),
+  saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
   
   getMetadata: async (filePath) => {
     try {

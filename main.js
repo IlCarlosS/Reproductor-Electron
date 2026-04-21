@@ -1,12 +1,100 @@
 // main.js (electron)
-import { app, BrowserWindow, ipcMain, dialog, protocol } from 'electron'; // Añadimos protocol aquí
+import { app, BrowserWindow, ipcMain, dialog, protocol } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import { existsSync, readFileSync, writeFileSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const CONFIG_PATH = path.join(app.getPath('userData'), 'player-settings.json');
 
-// 1. Registrar el esquema antes de que la app esté lista
+// --- 1. FUNCIÓN DE BÚSQUEDA PROFUNDA (AÑADIR ESTO) ---
+async function getFilesRecursively(dirPath) {
+  const SUPPORTED_EXTS = ['.mp3', '.flac', '.opus', '.wav'];
+  let results = [];
+  
+  try {
+    // IMPORTANTE: Usamos fs.promises.readdir para poder usar 'await'
+    const list = await fs.promises.readdir(dirPath, { withFileTypes: true });
+
+    for (const file of list) {
+      const fullPath = path.join(dirPath, file.name);
+      
+      if (file.isDirectory()) {
+        const recursiveResults = await getFilesRecursively(fullPath);
+        results = results.concat(recursiveResults);
+      } else {
+        const ext = path.extname(file.name).toLowerCase();
+        if (SUPPORTED_EXTS.includes(ext)) {
+          results.push(fullPath);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Error escaneando: ${dirPath}`, error);
+  }
+  return results;
+}
+
+// Helper para leer la configuración inicial de forma síncrona al arrancar
+function getInitialSettings() {
+  try {
+    if (existsSync(CONFIG_PATH)) {
+      return JSON.parse(readFileSync(CONFIG_PATH, 'utf-8'));
+    }
+  } catch (e) {
+    console.error("Error leyendo settings:", e);
+  }
+  return { lastFolder: null, lastSongPath: null, volume: 0.5 };
+}
+
+// --- 2. HANDLERS PARA COMUNICACIÓN CON VUE ---
+
+// Este solo abre el diálogo para elegir la carpeta
+ipcMain.handle('select-folder', async () => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openDirectory']
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+// Este hace el trabajo sucio de buscar todas las rutas de canciones (AÑADIR ESTO)
+ipcMain.handle('get-settings', () => {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      const data = fs.readFileSync(CONFIG_PATH, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error("Error al leer settings:", error);
+  }
+  return {};
+});
+
+ipcMain.handle('save-settings', (event, newSettings) => {
+  try {
+    let currentConfig = {};
+    if (fs.existsSync(CONFIG_PATH)) {
+      const data = fs.readFileSync(CONFIG_PATH, 'utf-8');
+      currentConfig = JSON.parse(data);
+    }
+
+    const updatedConfig = { ...currentConfig, ...newSettings };
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(updatedConfig, null, 2));
+    return true;
+  } catch (error) {
+    console.error("Error al persistir datos:", error);
+    return false;
+  }
+});
+
+// Handler para el escaneo
+ipcMain.handle('scan-directory', async (event, folderPath) => {
+  return await getFilesRecursively(folderPath);
+});
+
+// 3. Configuración de Protocolo y Ventana (Se mantiene igual)
 protocol.registerSchemesAsPrivileged([
   { 
     scheme: 'atom', 
@@ -33,43 +121,19 @@ function createWindow() {
   });
 
   win.loadURL('http://localhost:5173');
-  
-  // Opcional: abrir herramientas de desarrollo para ver errores de audio
-  // win.webContents.openDevTools();
 }
 
-ipcMain.handle('select-folder', async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ['openDirectory']
-  });
-  
-  if (result.canceled) {
-    return null;
-  } else {
-    return result.filePaths[0];
-  }
-});
-
-// 2. Manejar el estado Ready correctamente
 app.whenReady().then(() => {
   protocol.registerFileProtocol('atom', (request, callback) => {
     try {
-      // 1. Usamos el constructor URL para que Node parsee la ruta por nosotros
       const url = new URL(request.url);
-      
-      // En tu error: url.host es "d" y url.pathname es "/Music/Musica/..."
-      // 2. Decodificamos los caracteres especiales (como ese %C2%B4 de la tilde)
       const drive = url.host; 
       const filePath = decodeURIComponent(url.pathname);
-      
-      // 3. Reconstruimos la ruta de Windows: "D" + ":" + "/Music/..."
-      // path.join se encarga de que las barras sean las correctas (\ o /)
       const fullPath = path.normalize(`${drive}:${filePath}`);
-
       callback({ path: fullPath });
     } catch (error) {
       console.error('Error fatal en protocolo atom:', error);
-      callback({ error: -6 }); // ERR_FILE_NOT_FOUND
+      callback({ error: -6 });
     }
   });
 
