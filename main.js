@@ -109,18 +109,25 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 function createWindow() {
-  const win = new BrowserWindow({
+  // Cambiamos 'win' por 'mainWindow' para que coincida con lo de abajo
+  const mainWindow = new BrowserWindow({
     width: 1000,
     height: 700,
     webPreferences: {
-      preload: path.resolve(__dirname, 'preload.cjs'),
+      preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: false
     }
   });
 
-  win.loadURL('http://localhost:5173');
+  // Ahora 'mainWindow' sí existe y funcionará
+  if (process.env.NODE_ENV === 'development' || !app.isPackaged) {
+    mainWindow.loadURL('http://localhost:5173');
+    // mainWindow.webContents.openDevTools(); 
+  } else {
+    mainWindow.loadFile(path.join(__dirname, 'dist/index.html'));
+  }
 }
 
 app.whenReady().then(() => {

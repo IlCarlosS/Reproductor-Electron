@@ -210,6 +210,16 @@ export const useMusicStore = defineStore('music', {
         [this.songs[i], this.songs[j]] = [this.songs[j], this.songs[i]];
       }
     },
+
+    sortAZ() {
+      // Ordenamos de la A a la Z basándonos en el nombre
+      this.songs.sort((a, b) => a.name.localeCompare(b.name));
+    },
+
+    sortZA() {
+      // Ordenamos de la Z a la A
+      this.songs.sort((a, b) => b.name.localeCompare(a.name));
+    },
     
     toggleFullScreen() {
       this.isFullScreen = !this.isFullScreen;
