@@ -12,6 +12,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   join: (...args) => path.join(...args),
   getSettings: () => ipcRenderer.invoke('get-settings'),
   saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+  readLyricsFile: (filePath) => ipcRenderer.invoke('read-file', filePath), // Nuevo método para leer el contenido del .lrc
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
+  scanDirectory: (path) => ipcRenderer.invoke('scan-directory', path),
   
   getMetadata: async (filePath) => {
     try {

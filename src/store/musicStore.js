@@ -20,7 +20,17 @@ export const useMusicStore = defineStore('music', {
     repeatMode: 'all', // Opciones: 'none', 'all', 'one'
     currentSong: null,
     folderPath: null,
+    lyrics: [],
   }),
+
+  getters: {
+    // Encuentra el índice de la letra que corresponde al tiempo actual
+    currentLyricIndex(state) {
+      if (!state.lyrics.length) return -1;
+      // Buscamos la última línea cuyo tiempo sea menor o igual al actual
+      return state.lyrics.findLastIndex(line => line.time <= state.currentTime);
+    }
+  },
 
   actions: {
     async setFolderPath(path) {
@@ -161,6 +171,10 @@ export const useMusicStore = defineStore('music', {
     // Función auxiliar para no repetir código
     loadSong(song, shouldPlay) {
       this.currentSong = song;
+      this.lyrics = [];
+      if (song.lrcPath) {
+        this.loadLyrics();
+      }
       window.electronAPI.saveSettings({ lastSongPath: song.path });
 
       const pathSinPuntos = song.path.replace(':', '');
@@ -229,6 +243,104 @@ export const useMusicStore = defineStore('music', {
       const modes = ['none', 'all', 'one'];
       const currentIndex = modes.indexOf(this.repeatMode);
       this.repeatMode = modes[(currentIndex + 1) % modes.length];
+    },
+
+    //Shuffle From Here: La elegida va primero, el resto se mezcla
+    shuffleFromHere(targetSong) {
+      // Filtramos la elegida para no duplicarla
+      const otherSongs = this.songs.filter(s => s.path !== targetSong.path);
+      
+      // Algoritmo de Fisher-Yates para las demás
+      for (let i = otherSongs.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [otherSongs[i], otherSongs[j]] = [otherSongs[j], otherSongs[i]];
+      }
+      
+      // Reconstruimos la lista: la elegida primero + las mezcladas
+      this.songs = [targetSong, ...otherSongs];
+      
+      // Iniciamos la reproducción inmediatamente
+      this.setCurrentSong(targetSong);
+    },
+
+    // Play Next: Mueve la canción justo después de la actual
+    playNext(targetSong) {
+      // Si no hay canción sonando, la ponemos al principio
+      if (!this.currentSong) {
+        const filtered = this.songs.filter(s => s.path !== targetSong.path);
+        this.songs = [targetSong, ...filtered];
+        return;
+      }
+
+      // Si la elegida es la que ya está sonando, no hacemos nada
+      if (this.currentSong.path === targetSong.path) return;
+
+      // Eliminamos la canción de su posición actual
+      const filteredSongs = this.songs.filter(s => s.path !== targetSong.path);
+      
+      // Buscamos el nuevo índice de la canción actual (que pudo cambiar al filtrar)
+      const currentIndex = filteredSongs.findIndex(s => s.path === this.currentSong.path);
+      
+      // La insertamos justo después
+      filteredSongs.splice(currentIndex + 1, 0, targetSong);
+      
+      this.songs = filteredSongs;
+    },
+
+    // Remove from List: Filtra la canción del array actual
+    removeFromList(targetSong) {
+      // Si la canción a eliminar es la que está sonando, pasamos a la siguiente primero
+      if (this.currentSong?.path === targetSong.path) {
+        this.nextSong();
+      }
+      
+      this.songs = this.songs.filter(s => s.path !== targetSong.path);
+    },
+
+    async loadLyrics() {
+      // Si la canción no tiene ruta de letra, limpiamos el estado
+      if (!this.currentSong?.lrcPath) {
+        this.lyrics = [];
+        return;
+      }
+
+      try {
+        const rawText = await window.electronAPI.readLyricsFile(this.currentSong.lrcPath);
+        if (rawText) {
+          this.lyrics = this.parseLRC(rawText);
+        }
+      } catch (error) {
+        console.error("Error al cargar letras:", error);
+        this.lyrics = [];
+      }
+    },
+
+    parseLRC(text) {
+      const lines = text.split('\n');
+      const lrcArray = [];
+      // Regex para capturar [minutos:segundos.milisegundos]
+      const timeRegex = /\[(\d{2}):(\d{2})\.(\d{2,3})\]/;
+
+      lines.forEach(line => {
+        const match = timeRegex.exec(line);
+        if (match) {
+          const minutes = parseInt(match[1]);
+          const seconds = parseInt(match[2]);
+          const ms = parseInt(match[3]);
+          
+          // Convertimos a segundos totales (punto flotante)
+          // El formato .lrc suele usar centésimas (2 dígitos) o milésimas (3 dígitos)
+          const time = minutes * 60 + seconds + (ms > 99 ? ms / 1000 : ms / 100);
+          const lyricText = line.replace(timeRegex, '').trim();
+          
+          if (lyricText) {
+            lrcArray.push({ time, text: lyricText });
+          }
+        }
+      });
+      
+      // Aseguramos que estén ordenadas por tiempo
+      return lrcArray.sort((a, b) => a.time - b.time);
     },
   }
 });

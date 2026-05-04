@@ -78,5 +78,7 @@ npm run dist
 ```
 Resultado: Encontrarás el ejecutable en la carpeta /release. Si configuraste el target como portable, será un único archivo listo para usar.
 
-## Próximas Actualizaciones: 
+## Actualizaciones: 
 - Implementación de "See Lyrics" para lectura de archivos .lrc.
+- Se mejora la función aleatorio.
+- Se añade la funcion de "reproduccir a continuación", "Eliminar de lista", para un mejor control de la lista de reproducción.

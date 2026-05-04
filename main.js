@@ -9,7 +9,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CONFIG_PATH = path.join(app.getPath('userData'), 'player-settings.json');
 
-// --- 1. FUNCIÓN DE BÚSQUEDA PROFUNDA (AÑADIR ESTO) ---
+// --- HANDLER PARA LEER ARCHIVOS DE TEXTO (.LRC) ---
+ipcMain.handle('read-file', async (event, filePath) => {
+  try {
+    // Leemos el archivo con codificación utf-8 para obtener el texto
+    const content = await fs.promises.readFile(filePath, 'utf-8');
+    return content;
+  } catch (error) {
+    console.error("Error al leer el archivo:", error);
+    return null;
+  }
+});
+
+// --- 1. FUNCIÓN DE BÚSQUEDA PROFUNDA ---
 async function getFilesRecursively(dirPath) {
   const SUPPORTED_EXTS = ['.mp3', '.flac', '.opus', '.wav'];
   let results = [];
@@ -17,7 +29,6 @@ async function getFilesRecursively(dirPath) {
   try {
     // IMPORTANTE: Usamos fs.promises.readdir para poder usar 'await'
     const list = await fs.promises.readdir(dirPath, { withFileTypes: true });
-
     for (const file of list) {
       const fullPath = path.join(dirPath, file.name);
       
@@ -27,7 +38,17 @@ async function getFilesRecursively(dirPath) {
       } else {
         const ext = path.extname(file.name).toLowerCase();
         if (SUPPORTED_EXTS.includes(ext)) {
-          results.push(fullPath);
+          // Buscamos si existe un archivo .lrc con el mismo nombre
+          const lrcPath = fullPath.replace(ext, '.lrc');
+          const hasLyrics = fs.existsSync(lrcPath);
+
+          // Ahora devolvemos un objeto con la info básica necesaria
+          results.push({
+            path: fullPath,
+            name: file.name.replace(ext, ''),
+            extension: ext,
+            lrcPath: hasLyrics ? lrcPath : null
+          });
         }
       }
     }

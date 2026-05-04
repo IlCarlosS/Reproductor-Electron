@@ -9,24 +9,23 @@ const formatDuration = (seconds) => {
 
 export const scanFolder = async (folderPath) => {
   try {
-    // 1. Llamamos a la nueva función recursiva de Electron que creamos en main.js
-    // Esto nos devuelve un Array con TODAS las rutas completas de archivos válidos
-    const allFilePaths = await window.electronAPI.scanDirectory(folderPath);
+    // 1. Obtenemos el array de objetos { path, name, extension, lrcPath } desde main.js
+    const allFiles = await window.electronAPI.scanDirectory(folderPath);
 
-    // 2. Procesamos cada ruta encontrada para extraer sus metadatos
-    const songPromises = allFilePaths.map(async (fullPath) => {
-      // Obtenemos la extensión y el nombre base del archivo para casos sin tags
-      const ext = '.' + fullPath.split('.').pop();
-      const fileName = window.electronAPI.basename(fullPath, ext);
+    // 2. Procesamos cada objeto para extraer metadatos
+    const songPromises = allFiles.map(async (fileData) => {
       
-      // Extraemos metadatos (título, artista, album, duración, cover)
-      const meta = await window.electronAPI.getMetadata(fullPath);
+      // Extraemos metadatos usando la ruta que viene en el objeto
+      const meta = await window.electronAPI.getMetadata(fileData.path);
 
       return {
-        // Si el archivo no tiene tag de título, usamos el nombre del archivo
-        name: meta?.title || fileName,
-        path: fullPath,
-        extension: ext,
+        // Usamos el título del metadato o el nombre que ya extrajo main.js
+        name: meta?.title || fileData.name,
+        path: fileData.path,
+        extension: fileData.extension,
+        // Pasamos la info de las letras directamente al Store
+        lrcPath: fileData.lrcPath,
+        hasLyrics: !!fileData.lrcPath,
         artist: meta?.artist || 'Artista desconocido',
         album: meta?.album || 'Álbum desconocido',
         duration: formatDuration(meta?.duration),
