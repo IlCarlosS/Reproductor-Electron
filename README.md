@@ -1,6 +1,12 @@
 # Neumorphic Music Player
 Una aplicación de escritorio moderna y minimalista diseñada para entusiastas de la música que prefieren gestionar su propia colección de archivos locales. Este reproductor no solo reproduce sonido; ofrece una experiencia táctil y visual a través de una interfaz Neumórfica refinada.
 
+### Actualizaciones: 
+- Mejora en la interfaz de usuario en la lista de reproducción (ListaSong,vue y SongItem.vue).
+- Implementación de auto-scroll para facilitar la navegación en la lista de reproducción.
+- Se añade un buscador en la lista de reproducción, que permite buscar canciones, album o artistas de manera rapida.
+- Estado **Activo** en la lista de reproducción de la canción que se esta reproducciendo.
+
 ## Estética y Diseño
 El proyecto se basa en el Neumorfismo (Soft UI), una tendencia de diseño que utiliza sombras paralelas (luces y sombras) para crear componentes que parecen "extruidos" o "hundidos" en el fondo.
 
@@ -77,8 +83,3 @@ npm run dev
 npm run dist
 ```
 Resultado: Encontrarás el ejecutable en la carpeta /release. Si configuraste el target como portable, será un único archivo listo para usar.
-
-## Actualizaciones: 
-- Implementación de "See Lyrics" para lectura de archivos .lrc.
-- Se mejora la función aleatorio.
-- Se añade la funcion de "reproduccir a continuación", "Eliminar de lista", para un mejor control de la lista de reproducción.

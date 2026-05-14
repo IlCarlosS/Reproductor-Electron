@@ -1,5 +1,6 @@
 //ListaSong.vue
 <script setup>
+import { ref, computed, watch, nextTick } from 'vue';
 import { useMusicStore } from '../store/musicStore';
 import { scanFolder } from '../services/scanner';
 import SongItem from '../components/SongItem.vue';
@@ -7,6 +8,8 @@ import PlayerBar from '../components/PlayerBar.vue';
 
 // Accedemos al store
 const musicStore = useMusicStore();
+const searchQuery = ref('');
+const listContainer = ref(null);
 
 // Función para seleccionar carpeta
 const handleSelectFolder = async () => {
@@ -18,6 +21,35 @@ const handleSelectFolder = async () => {
     musicStore.setSongs(foundSongs);
   }
 };
+
+// Filtrado de canciones en tiempo real
+const filteredSongs = computed(() => {
+  const query = searchQuery.value.toLowerCase().trim();
+  if (!query) return musicStore.songs;
+  
+  return musicStore.songs.filter(song => 
+    song.name.toLowerCase().includes(query) || 
+    song.artist.toLowerCase().includes(query) ||
+    song.album.toLowerCase().includes(query)
+  );
+});
+
+// Lógica de Auto-scroll
+const scrollToActive = async () => {
+  await nextTick(); // Esperamos a que Vue renderice los cambios
+  const activeElement = listContainer.value?.querySelector('[data-active="true"]');
+  if (activeElement) {
+    activeElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center' // Centra la canción activa en la lista
+    });
+  }
+};
+
+watch(() => musicStore.currentSong?.path, () => {
+  scrollToActive();
+});
+
 </script>
 
 <template>
@@ -39,7 +71,8 @@ const handleSelectFolder = async () => {
         </button>
       </header>
 
-      <div v-if="musicStore.songs.length > 0" class="flex gap-4 mb-6 shrink-0">
+      <div v-if="musicStore.songs.length > 0" class="flex items-center gap-4 mb-6 shrink-0">
+        <!-- Botones A-Z, Z-A y Aleatorio -->
         <button @click="musicStore.sortAZ()" class="p-2.5 rounded-lg neu-flat neu-hover active:neu-pressed flex items-center gap-2 text-xs font-semibold text-muted hover:text-accent transition-colors" title="Ordenar A-Z">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 10v-5c0 -1.38 .62 -2 2 -2s2 .62 2 2v5m0 -3h-4" /><path d="M19 21h-4l4 -7h-4" /><path d="M4 15l3 3l3 -3" /><path d="M7 6v12" /></svg>
           A-Z
@@ -54,9 +87,22 @@ const handleSelectFolder = async () => {
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 4l3 3l-3 3" /><path d="M18 20l3 -3l-3 -3" /><path d="M3 7h3a5 5 0 0 1 4.45 2.74" /><path d="M21 7h-5a5 5 0 0 0 -4.45 2.74" /><path d="M12 14.26a5 5 0 0 1 4.45 2.74h5" /><path d="M3 17h3a5 5 0 0 0 4.45 -2.74" /></svg>
           Aleatorio
         </button>
+
+        <!-- BUSCADOR NEUMÓRFICO -->
+        <div class="flex-1 relative group">
+          <div class="absolute left-3 top-1/2 -translate-y-1/2 text-muted group-focus-within:text-accent transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+          <input 
+            v-model="searchQuery"
+            type="text" 
+            placeholder="Buscar canción, artista..." 
+            class="w-full bg-transparent p-2.5 pl-10 rounded-xl neu-pressed border border-white/5 text-sm text-blanco placeholder:text-muted outline-none focus:border-accent/30 transition-all"
+          />
+        </div>
       </div>
 
-      <main class="flex-1 overflow-hidden flex flex-col">
+      <!--<main class="flex-1 overflow-hidden flex flex-col">
         
         <div v-if="musicStore.songs.length === 0" 
              class="flex-1 flex flex-col items-center justify-center rounded-3xl neu-pressed">
@@ -79,7 +125,48 @@ const handleSelectFolder = async () => {
             :index="index"
           />
         </div>
+      </main>-->
+
+      <main class="flex-1 overflow-hidden flex flex-col">
+        <!-- Estado: Sin biblioteca seleccionada -->
+        <div v-if="musicStore.songs.length === 0" 
+            class="flex-1 flex flex-col items-center justify-center rounded-3xl neu-pressed">
+          <div class="mb-8 p-6 rounded-3xl neu-flat">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="w-20 h-20 text-muted/40">
+              <path d="M21 3a1 1 0 0 1 0 2h-3v12a4 4 0 1 1 -2.001 -3.465l.001 -9.535a1 1 0 0 1 1 -1z" />
+              <path d="M14 5a1 1 0 0 1 -1 1h-10a1 1 0 1 1 0 -2h10a1 1 0 0 1 1 1" />
+              <path d="M14 9a1 1 0 0 1 -1 1h-10a1 1 0 1 1 0 -2h10a1 1 0 0 1 1 1" />
+              <path d="M10 13a1 1 0 0 1 -1 1h-6a1 1 0 0 1 0 -2h6a1 1 0 0 1 1 1" />
+            </svg>
+          </div>
+          <h2 class="text-lg font-medium text-muted">No has seleccionado una biblioteca aún</h2>
+        </div>
+
+        <!-- Estado: Lista de canciones (con buscador y scroll activo) -->
+        <div 
+          v-else 
+          ref="listContainer" 
+          class="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+        >
+          <!-- 
+            1. Usamos 'filteredSongs' para que el buscador funcione.
+            2. Añadimos ':data-active' para que el auto-scroll encuentre la canción.
+          -->
+          <SongItem 
+            v-for="(song, index) in filteredSongs" 
+            :key="song.path" 
+            :song="song" 
+            :index="index"
+            :data-active="musicStore.currentSong?.path === song.path"
+          />
+
+          <!-- Mensaje extra: Si el buscador no arroja resultados -->
+          <div v-if="filteredSongs.length === 0" class="flex flex-col items-center justify-center py-20 text-muted/50 italic">
+            <p>No hay coincidencias para tu búsqueda</p>
+          </div>
+        </div>
       </main>
+      
     </div>
 
     <PlayerBar /> 

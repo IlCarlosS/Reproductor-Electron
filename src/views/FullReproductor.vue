@@ -118,7 +118,7 @@ const toggleLyrics = async () => {
 
     <div class="w-full max-w-4xl flex flex-col items-center gap-10">
       <div class="flex items-center justify-between w-full">
-        <button @click="musicStore.shuffleFromHere(song)" class="p-4 rounded-full neu-flat hover:text-accent transition-colors">
+        <button @click="musicStore.shuffleSongs()" class="p-4 rounded-full neu-flat hover:text-accent transition-colors">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 4l3 3l-3 3" /><path d="M18 20l3 -3l-3 -3" /><path d="M3 7h3a5 5 0 0 1 4.45 2.74" /><path d="M21 7h-5a5 5 0 0 0 -4.45 2.74" /><path d="M12 14.26a5 5 0 0 1 4.45 2.74h5" /><path d="M3 17h3a5 5 0 0 0 4.45 -2.74" /></svg>
         </button>
 

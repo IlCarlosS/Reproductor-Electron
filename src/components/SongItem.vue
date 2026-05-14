@@ -1,12 +1,17 @@
 <!-- SongItem.vue -->
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, computed } from 'vue';
 import { useMusicStore } from '../store/musicStore';
 
 const musicStore = useMusicStore();
 const props = defineProps({
   song: Object,
   index: Number
+});
+
+// Detectar si esta canción es la que está sonando
+const isActive = computed(() => {
+  return musicStore.currentSong?.path === props.song.path;
 });
 
 const showMenu = ref(false);
@@ -36,24 +41,40 @@ onUnmounted(() => window.removeEventListener('click', closeMenu));
 <template>
   <div
     @contextmenu.prevent="handleRightClick" 
-    class="flex items-center justify-between p-4 my-2 mx-1 rounded-2xl neu-flat neu-hover cursor-pointer group relative hover:z-20 transition-all"
+    class="flex items-center justify-between p-4 my-2 mx-1 rounded-2xl cursor-pointer group relative transition-all duration-300"
+    :class="[
+      isActive 
+        ? 'neu-pressed z-10 shadow-accent/5 border-accent/20 border' 
+        : 'neu-flat neu-hover hover:z-20 border-transparent border'
+    ]"
   >
     
-    <!-- Contenedor Principal (Click para reproducir) -->
+    <!-- Contenedor Principal -->
     <div @click="musicStore.setCurrentSong(song)" class="flex items-center gap-4 flex-1 overflow-hidden">
-      <div class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl overflow-hidden neu-pressed border border-white/5">
+      <div 
+        class="w-12 h-12 flex-shrink-0 flex items-center justify-center rounded-xl overflow-hidden border border-white/5 transition-all"
+        :class="isActive ? 'neu-flat' : 'neu-pressed'"
+      >
         <img v-if="song.cover" :src="song.cover" class="w-full h-full object-cover" />
         
-        <div v-else class="text-muted group-hover:text-accent flex items-center justify-center">
-          <span class="text-xs font-bold group-hover:hidden">{{ index + 1 }}</span>
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 hidden group-hover:block" viewBox="0 0 24 24" fill="currentColor">
+        <div v-else class="flex items-center justify-center transition-colors">
+          <!-- Icono de reproducción si está activa, si no, el número -->
+          <svg v-if="isActive" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-accent animate-pulse" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v18M8 8v8M16 6v12M4 11v2M20 9v6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span v-else class="text-xs font-bold text-muted group-hover:hidden">{{ index + 1 }}</span>
+          
+          <svg v-if="!isActive" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-accent hidden group-hover:block" viewBox="0 0 24 24" fill="currentColor">
             <path d="M8 5.14v14c0 .866.443 1.187 1.1 1.187.16 0 .33-.035.49-.11l10-7c.41-.287.646-.61.646-1.077 0-.466-.235-.79-.647-1.077l-10-7c-.16-.074-.33-.108-.49-.108-.657 0-1.1.32-1.1 1.186Z" />
           </svg>
         </div>
       </div>
 
       <div class="overflow-hidden">
-        <h3 class="text-blanco font-medium truncate max-w-[250px] group-hover:text-accent transition-colors">
+        <h3 
+          class="font-medium truncate max-w-[250px] transition-colors"
+          :class="isActive ? 'text-accent' : 'text-blanco group-hover:text-accent'"
+        >
           {{ song.name }}
         </h3>
         <p class="text-xs text-muted truncate">{{ song.artist }} • {{ song.album }}</p>
@@ -62,15 +83,22 @@ onUnmounted(() => window.removeEventListener('click', closeMenu));
 
     <!-- Info y Botón de Menú -->
     <div class="flex items-center gap-4 ml-4">
-      <span class="text-[9px] uppercase font-black px-2 py-0.5 rounded-md neu-pressed text-accent/80 tracking-[0.15em] border border-white/5 hidden sm:block">
+      <span 
+        class="text-[9px] uppercase font-black px-2 py-0.5 rounded-md neu-pressed tracking-[0.15em] border border-white/5 hidden sm:block transition-colors"
+        :class="isActive ? 'text-accent' : 'text-accent/60'"
+      >
         {{ song.extension.replace('.', '') }}
       </span>
-      <span class="text-sm text-blanco font-mono opacity-80 w-12 text-right">{{ song.duration }}</span>
+      <span class="text-sm font-mono opacity-80 w-12 text-right transition-colors" :class="isActive ? 'text-accent' : 'text-blanco'">
+        {{ song.duration }}
+      </span>
       
-      <!-- Trigger del Menú -->
       <button 
         @click="toggleMenu"
-        class="p-2 rounded-lg neu-flat hover:neu-pressed text-muted hover:text-accent transition-all opacity-0 group-hover:opacity-100"
+        class="p-2 rounded-lg transition-all"
+        :class="[
+          isActive ? 'opacity-100 neu-pressed text-accent' : 'opacity-0 group-hover:opacity-100 neu-flat hover:neu-pressed text-muted hover:text-accent'
+        ]"
       >
         <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
       </button>
