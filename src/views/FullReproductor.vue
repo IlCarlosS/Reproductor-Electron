@@ -101,7 +101,7 @@ const toggleLyrics = async () => {
             showLyrics ? 'neu-pressed text-accent' : 'neu-flat hover:neu-pressed text-blanco/80'
           ]"
         >
-          {{ showLyrics ? 'Hide Lyrics' : 'See Lyrics' }}
+          {{ showLyrics ? 'Ocultar Letra' : 'Ver Letra' }}
           <svg 
             :class="[
               'transition-transform duration-300',

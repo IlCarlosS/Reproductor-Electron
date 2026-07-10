@@ -51,7 +51,6 @@ watch(() => musicStore.currentSong?.path, () => {
 });
 
 </script>
-
 <template>
   <div class="h-screen w-screen flex flex-col bg-fondo text-blanco overflow-hidden">
     
@@ -102,32 +101,7 @@ watch(() => musicStore.currentSong?.path, () => {
         </div>
       </div>
 
-      <!--<main class="flex-1 overflow-hidden flex flex-col">
-        
-        <div v-if="musicStore.songs.length === 0" 
-             class="flex-1 flex flex-col items-center justify-center rounded-3xl neu-pressed">
-          <div class="mb-8 p-6 rounded-3xl neu-flat">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="currentColor" class="w-20 h-20 text-muted/40">
-              <path d="M21 3a1 1 0 0 1 0 2h-3v12a4 4 0 1 1 -2.001 -3.465l.001 -9.535a1 1 0 0 1 1 -1z" />
-              <path d="M14 5a1 1 0 0 1 -1 1h-10a1 1 0 1 1 0 -2h10a1 1 0 0 1 1 1" />
-              <path d="M14 9a1 1 0 0 1 -1 1h-10a1 1 0 1 1 0 -2h10a1 1 0 0 1 1 1" />
-              <path d="M10 13a1 1 0 0 1 -1 1h-6a1 1 0 0 1 0 -2h6a1 1 0 0 1 1 1" />
-            </svg>
-          </div>
-          <h2 class="text-lg font-medium text-muted">No has seleccionado una biblioteca aún</h2>
-        </div>
-
-        <div v-else class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-          <SongItem 
-            v-for="(song, index) in musicStore.songs" 
-            :key="song.path" 
-            :song="song" 
-            :index="index"
-          />
-        </div>
-      </main>-->
-
-      <main class="flex-1 overflow-hidden flex flex-col">
+      <main class="flex-1 overflow-hidden flex flex-col min-h-0">
         <!-- Estado: Sin biblioteca seleccionada -->
         <div v-if="musicStore.songs.length === 0" 
             class="flex-1 flex flex-col items-center justify-center rounded-3xl neu-pressed">
@@ -166,7 +140,6 @@ watch(() => musicStore.currentSong?.path, () => {
           </div>
         </div>
       </main>
-      
     </div>
 
     <PlayerBar /> 
@@ -175,15 +148,22 @@ watch(() => musicStore.currentSong?.path, () => {
 </template>
 
 <style scoped>
-/* Scrollbar personalizada para que no rompa el diseño */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 10px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--color-border);
+  background: rgba(255, 255, 255, 0.02); /* Fondo súper sutil */
   border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2); /* Color visible contra fondo oscuro */
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.4); /* Brilla al pasar el mouse */
+  cursor: pointer;
 }
 </style>

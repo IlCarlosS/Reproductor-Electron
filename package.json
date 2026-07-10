@@ -1,7 +1,7 @@
 {
   "name": "music-player",
   "private": true,
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -25,8 +25,17 @@
       "output": "release"
     },
     "win": {
-      "target": "portable",
-      "icon": "public/icon.png"
+      "target": "nsis", 
+      "icon": "public/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "public/icon.ico",
+      "uninstallerIcon": "public/icon.ico",
+      "uninstallDisplayName": "Neumorphic Music",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     }
   },
   "dependencies": {
