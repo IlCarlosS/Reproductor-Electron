@@ -1,67 +1,131 @@
 @import "tailwindcss";
 
 @theme {
-  /* Al definirlo aquí, Tailwind genera automáticamente la clase text-accent */
-  --color-accent: #FFC107;
-  --color-bg: #1E2A3A;
-  --color-border: #4A4D4E;
-  --color-muted: #B0BEC5;
-  --color-negro: #0B0F14;
-  --color-blanco: #F1F5F9;
+  /* Hacemos que Tailwind lea nuestras variables dinámicas */
+  --color-accent: var(--theme-accent);
+  --color-bg: var(--theme-bg);
+  --color-border: var(--theme-border);
+  --color-muted: var(--theme-muted);
+  --color-negro: var(--theme-negro);
+  --color-blanco: var(--theme-text);
 }
 
-:root {
-  --color-accent: #FFC107;
-  --color-bg: #1E2A3A;
-  --color-border: #4A4D4E;
-  --color-muted: #B0BEC5;
-  --color-negro: #0B0F14; /* Un negro azulado muy elegante */
-  --color-blanco: #F1F5F9; /* Un blanco roto tipo "cloud" */
+/* =========================================
+   PALETAS DE COLORES (Variables Dinámicas)
+   ========================================= */
+
+/* 1. MIDNIGHT (Por defecto) */
+:root, [data-theme="midnight"] {
+  --theme-accent: #FFC107;
+  --theme-bg: #1E2A3A;
+  --theme-border: #4A4D4E;
+  --theme-muted: #B0BEC5;
+  --theme-negro: #0B0F14;
+  --theme-text: #F1F5F9;
+  
+  /* Sombras Neumórficas */
   --neu-dark: #161f2b;
   --neu-light: #263549;
 }
 
+/* 2. PEARL (Blanco y Morado) */
+[data-theme="pearl"] {
+  --theme-accent: #7e57c2;
+  --theme-bg: #E0E5EC; /* Off-white perfecto para sombras */
+  --theme-border: #D1D9E6;
+  --theme-muted: #8892b0;
+  --theme-negro: #1a202c; 
+  --theme-text: #2d3748; /* Texto oscuro para contraste */
+  
+  --neu-dark: #a3b1c6;
+  --neu-light: #ffffff;
+}
+
+/* 3. GIBSON (Café Vintage y Rojo) */
+[data-theme="gibson"] {
+  --theme-accent: #d32f2f;
+  --theme-bg: #3e2723; /* Madera oscura */
+  --theme-border: #5d4037;
+  --theme-muted: #bcaaa4;
+  --theme-negro: #1b100e;
+  --theme-text: #fff8e1; /* Blanco cálido */
+  
+  --neu-dark: #2d1c19;
+  --neu-light: #4f322d;
+}
+
+/* 4. FENDER (Gris Carbón y Plata) */
+[data-theme="fender"] {
+  --theme-accent: #c0c0c0;
+  --theme-bg: #2b2b2b; /* Gris muy oscuro, no negro puro */
+  --theme-border: #424242;
+  --theme-muted: #9e9e9e;
+  --theme-negro: #121212;
+  --theme-text: #f5f5f5;
+  
+  --neu-dark: #1e1e1e;
+  --neu-light: #383838;
+}
+
+/* 5. MATRIX (Slate Oscuro y Verde Neón) */
+[data-theme="matrix"] {
+  --theme-accent: #00e676;
+  --theme-bg: #1f2421; /* Gris oscuro con tinte verde */
+  --theme-border: #333d36;
+  --theme-muted: #849389;
+  --theme-negro: #0f1210;
+  --theme-text: #e8f5e9;
+  
+  --neu-dark: #161a18;
+  --neu-light: #282e2a;
+}
+
+/* =========================================
+   CAPAS BASE Y COMPONENTES
+   ========================================= */
+
 @layer base {
   body {
-    @apply bg-[var(--color-bg)] text-[var(--color-blanco)];
+    @apply bg-[var(--theme-bg)] text-[var(--theme-text)];
     font-family: 'Ubuntu', sans-serif;
+    /* Transición suave al cambiar de tema */
+    transition: background-color 0.4s ease, color 0.4s ease;
   }
 }
 
 @layer components {
   .neu-flat {
-    background: var(--color-bg);
-    /* Sombras más sutiles para elementos de lista */
+    background: var(--theme-bg);
     box-shadow: 4px 4px 10px var(--neu-dark), 
                -4px -4px 10px var(--neu-light);
-    /* Evita que las sombras se corten visualmente */
     margin: 4px; 
   }
 
   .neu-pressed {
-    background: var(--color-bg);
+    background: var(--theme-bg);
     box-shadow: inset 2px 2px 5px var(--neu-dark), 
                 inset -2px -2px 5px var(--neu-light);
   }
 
-  /* Mejora de la transición: debe estar en la clase base, no solo en hover */
   .neu-hover {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .neu-hover:hover {
-    /* En Neumorfismo, el hover suele "elevar" más el objeto o hundirlo */
     transform: translateY(-2px);
     box-shadow: 8px 8px 16px var(--neu-dark), 
                -8px -8px 16px var(--neu-light);
   }
 }
 
-/* Estilo para que el slider se vea limpio */
+/* =========================================
+   COMPONENTES PERSONALIZADOS
+   ========================================= */
+
 .custom-slider {
   -webkit-appearance: none;
   height: 4px;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(150, 150, 150, 0.2); /* Fondo neutro semitransparente */
   border-radius: 5px;
   outline: none;
 }
@@ -71,18 +135,18 @@
   appearance: none;
   width: 14px;
   height: 14px;
-  background: #FFC107; /* Tu color accent */
+  background: var(--theme-accent); /* Ahora responde al tema */
   border-radius: 50%;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(FF, C1, 07, 0.5); /* Resplandor acorde al visualizador */
-  transition: transform 0.2s ease;
+  box-shadow: 0 0 10px var(--theme-accent); /* Resplandor dinámico */
+  transition: transform 0.2s ease, background-color 0.4s ease, box-shadow 0.4s ease;
 }
 
 .custom-slider::-webkit-slider-thumb:hover {
   transform: scale(1.2);
 }
 
-@keyframes vinyl-spin { /*animación disco*/
+@keyframes vinyl-spin { 
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }

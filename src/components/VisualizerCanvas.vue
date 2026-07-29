@@ -9,18 +9,44 @@ let analyser = null;
 let animationId = null;
 let dataArray = null;
 
-const ACCENT_COLOR = '#FFC107'; 
-const GLOW_COLOR = 'rgba(255, 193, 7, 0.4)'; 
+// 1. Cambiamos de const a let e inicializamos con el color fallback
+let ACCENT_COLOR = '#FFC107'; 
+let GLOW_COLOR = 'rgba(255, 193, 7, 0.4)'; 
+let observer = null;
+
+// 2. Helper para convertir el color HEX de la variable CSS a RGBA para el resplandor
+const hexToRgba = (hex, alpha = 0.4) => {
+  const cleanHex = hex.trim().replace('#', '');
+  if (cleanHex.length !== 6) return `rgba(255, 193, 7, ${alpha})`;
+  
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// 3. Extrae la variable --color-accent del tema activo en CSS
+const updateCanvasColors = () => {
+  const cssColor = getComputedStyle(document.documentElement)
+    .getPropertyValue('--color-accent')
+    .trim();
+
+  if (cssColor) {
+    ACCENT_COLOR = cssColor;
+    GLOW_COLOR = hexToRgba(cssColor, 0.4);
+  }
+};
 
 const draw = () => {
   if (!ctx || !analyser) return;
 
   const canvas = canvasRef.value;
-  if(!canvas) return;
+  if (!canvas) return;
   
   analyser.getByteFrequencyData(dataArray);
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // Usa automáticamente el ACCENT_COLOR y GLOW_COLOR que actualiza el observador
   ctx.fillStyle = ACCENT_COLOR;
   ctx.shadowBlur = 12;
   ctx.shadowColor = GLOW_COLOR; 
@@ -47,30 +73,51 @@ const draw = () => {
 
 const fillRoundedRect = (ctx, x, y, w, h, r) => {
   ctx.beginPath();
-  ctx.roundRect(x, y, w, h, r); // Versión moderna y limpia de rectángulos redondeados
+  ctx.roundRect(x, y, w, h, r);
   ctx.fill();
 };
+
+let resizeHandler = null;
 
 onMounted(() => {
   ctx = canvasRef.value.getContext('2d');
   
-  // Pedimos el analizador al store. Si ya existe, nos da el mismo.
   analyser = musicStore.getAnalyser();
   dataArray = new Uint8Array(analyser.frequencyBinCount);
 
-  const resize = () => {
-    if(!canvasRef.value) return;
+  // 4. Sincronizamos colores iniciales al montar
+  updateCanvasColors();
+
+  // 5. Escuchamos cambios en el atributo data-theme del documentElement
+  observer = new MutationObserver((mutations) => {
+    for (const mutation of mutations) {
+      if (mutation.attributeName === 'data-theme') {
+        updateCanvasColors();
+      }
+    }
+  });
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+
+  resizeHandler = () => {
+    if (!canvasRef.value) return;
     canvasRef.value.width = canvasRef.value.parentElement.clientWidth;
     canvasRef.value.height = canvasRef.value.parentElement.clientHeight;
   };
   
-  window.addEventListener('resize', resize);
-  resize();
+  window.addEventListener('resize', resizeHandler);
+  resizeHandler();
   draw();
 });
 
 onUnmounted(() => {
   cancelAnimationFrame(animationId);
+  // Limpieza de eventos y observadores para optimizar memoria
+  if (resizeHandler) window.removeEventListener('resize', resizeHandler);
+  if (observer) observer.disconnect();
 });
 </script>
 

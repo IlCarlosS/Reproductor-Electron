@@ -46,7 +46,15 @@ export const useMusicStore = defineStore('music', {
       // 1. Configuramos eventos de audio
       audio.ontimeupdate = () => { this.currentTime = audio.currentTime; };
       audio.onloadedmetadata = () => { this.duration = audio.duration; };
-      audio.onended = () => { this.nextSong(); };
+      audio.onended = () => { 
+        if (this.repeatMode === 'one') {
+          audio.currentTime = 0;
+          audio.play();
+        } else {
+          // Para 'all' y 'none', nextSong se encarga de decidir qué hacer
+          this.nextSong(); 
+        }
+      };
       
       // 2. Cargamos persistencia
       const settings = await window.electronAPI.getSettings();
@@ -207,6 +215,17 @@ export const useMusicStore = defineStore('music', {
     nextSong() {
       if (this.songs.length === 0) return;
       const index = this.songs.findIndex(s => s.path === this.currentSong?.path);
+      
+      // Verificamos si estamos en la ÚLTIMA canción de la lista
+      if (index === this.songs.length - 1) {
+        if (this.repeatMode === 'none') {
+          // Si el modo es 'none', nos detenemos y actualizamos el estado visual
+          this.isPlaying = false; // (Asumo que usas una variable como esta para el botón de Play/Pause)
+          return; // Salimos de la función para no cargar la pista 0
+        }
+      }
+
+      // Si no se detuvo por el 'none', pasamos a la siguiente (o damos la vuelta al inicio si es 'all')
       const nextIndex = (index + 1) % this.songs.length;
       this.setCurrentSong(this.songs[nextIndex]);
     },
