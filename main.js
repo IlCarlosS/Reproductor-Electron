@@ -1,7 +1,8 @@
 // main.js (electron)
-import { app, BrowserWindow, ipcMain, dialog, protocol } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, protocol, net } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { pathToFileURL } from 'url';
 import fs from 'fs';
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 
@@ -153,16 +154,33 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-  protocol.registerFileProtocol('atom', (request, callback) => {
+  protocol.handle('atom', (request) => {
     try {
-      const url = new URL(request.url);
-      const drive = url.host; 
-      const filePath = decodeURIComponent(url.pathname);
-      const fullPath = path.normalize(`${drive}:${filePath}`);
-      callback({ path: fullPath });
+      // request.url es "atom://C/Users/..." en Windows o "atom://home/usuario/..." en Linux
+      // Le quitamos el prefijo 'atom://'
+      let rawPath = decodeURIComponent(request.url.replace(/^atom:\/\//, ''));
+
+      let fullPath;
+
+      if (process.platform === 'win32') {
+        // En Windows, reconstruimos la letra de unidad (ej: "C/Users..." -> "C:/Users...")
+        if (rawPath.length >= 2 && rawPath[1] === '/') {
+          fullPath = rawPath[0] + ':' + rawPath.slice(1);
+        } else {
+          fullPath = rawPath;
+        }
+      } else {
+        // En Linux / macOS, aseguramos que la ruta comience con '/'
+        fullPath = rawPath.startsWith('/') ? rawPath : '/' + rawPath;
+      }
+
+      // Convertimos la ruta normalizada del sistema a una URL de archivo válida (file:///)
+      const fileUrl = pathToFileURL(path.normalize(fullPath)).toString();
+
+      return net.fetch(fileUrl);
     } catch (error) {
       console.error('Error fatal en protocolo atom:', error);
-      callback({ error: -6 });
+      return new Response('File not found', { status: 404 });
     }
   });
 

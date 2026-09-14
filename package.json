@@ -1,7 +1,10 @@
 {
   "name": "music-player",
+  "author": "Carlos Solis <carloss293462@gmail.com>",
   "private": true,
-  "version": "1.2.2",
+  "description": "Minimalist & elegant desktop music player built with Vue 3 and Electron. Features a refined Neumorphic UI, deep local folder scanning, and persistent session memory.",
+  "homepage": "https://github.com/IlCarlosS/Reproductor-Electron",
+  "version": "1.2.4",
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -10,7 +13,9 @@
     "dev": "concurrently \"npm run vite:dev\" \"npm run electron:dev\"",
     "build": "vite build",
     "preview": "vite preview",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux"
   },
   "build": {
     "appId": "com.cs.musicplayer",
@@ -25,7 +30,7 @@
       "output": "release"
     },
     "win": {
-      "target": "nsis", 
+      "target": "nsis",
       "icon": "public/icon.ico"
     },
     "nsis": {
@@ -36,6 +41,14 @@
       "uninstallDisplayName": "Neumorphic Music",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true
+    },
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "icon": "public/icon.png",
+      "category": "AudioVideo",
+      "maintainer": "Carlos Solis <carloss293462@gmail.com>",
+      "executableName": "neumorphic-music",
+      "synopsis": "Minimalist desktop music player"
     }
   },
   "dependencies": {

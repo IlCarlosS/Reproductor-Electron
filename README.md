@@ -4,6 +4,9 @@ Una aplicación de escritorio moderna y minimalista diseñada para entusiastas d
 
 ## Actualizaciones:
 
+### 1.2.4
+- Compatibilidad con entornos linux. Advertencia: Esta versión para linux puede contener bug y/o errores menores.
+
 ### 1.2.2
 
 - Se añade tema/paleta de colores para mayor personalización del reproductor que modifica tanto la lista de canciones como la vista del reproductor y ondas de sonido (canvas). Tema/Paleta de colores: midnight (por defecto), pearl, gibson, fender, matrix. (style.css)
@@ -14,13 +17,6 @@ Una aplicación de escritorio moderna y minimalista diseñada para entusiastas d
 - Eliminación de barra de herramientas de windows/electron, aun se puede mostrar con "alt" (main.js).
 - Mejoras en la estructura del código y eliminación de espacios en blanco y comentado (ListaSong.vue).
 - Modificación del package.json para la creación de un instalador (.exe) al ejecutar el comando "npm run dist".
-
-### 1.2.0
-
-- Mejora en la interfaz de usuario en la lista de reproducción (ListaSong,vue y SongItem.vue).
-- Implementación de auto-scroll para facilitar la navegación en la lista de reproducción.
-- Se añade un buscador en la lista de reproducción, que permite buscar canciones, album o artistas de manera rapida.
-- Estado **Activo** en la lista de reproducción de la canción que se esta reproducciendo.
 
 ## Estética y Diseño
 
