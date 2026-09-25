@@ -4,6 +4,9 @@ Una aplicación de escritorio moderna y minimalista diseñada para entusiastas d
 
 ## Actualizaciones:
 
+## 1.2.5
+- Mejora en la interfaz de usuario para pantallas mas pequeñas (laptos) (FullReproductor.vue).
+
 ### 1.2.4
 - Compatibilidad con entornos linux. Advertencia: Esta versión para linux puede contener bug y/o errores menores.
 
@@ -100,8 +103,9 @@ npm install
 npm run dev
 # Nota: Este comando lanza simultáneamente el servidor de Vite para el frontend y el proceso de Electron. Recuerda que si haces cambios en main.js, deberás reiniciar el comando, pero si cambias los .vue, se actualizarán solos (HMR).
 
-# Luego ejecuta el empaquetado
-npm run dist
+# Luego ejecuta el empaquetado según el SO
+npm run dist:win
+npm run dist:linux
 ```
 
 Resultado: Encontrarás el ejecutable en la carpeta /release. Si configuraste el target como portable, será un único archivo listo para usar.

@@ -4,7 +4,7 @@
   "private": true,
   "description": "Minimalist & elegant desktop music player built with Vue 3 and Electron. Features a refined Neumorphic UI, deep local folder scanning, and persistent session memory.",
   "homepage": "https://github.com/IlCarlosS/Reproductor-Electron",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "main": "main.js",
   "type": "module",
   "scripts": {

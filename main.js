@@ -73,7 +73,7 @@ function getInitialSettings() {
 
 // --- 2. HANDLERS PARA COMUNICACIÓN CON VUE ---
 
-// Este solo abre el diálogo para elegir la carpeta
+//abre el diálogo para elegir la carpeta
 ipcMain.handle('select-folder', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openDirectory']
@@ -81,7 +81,7 @@ ipcMain.handle('select-folder', async () => {
   return result.canceled ? null : result.filePaths[0];
 });
 
-// Este hace el trabajo sucio de buscar todas las rutas de canciones (AÑADIR ESTO)
+//buscar todas las rutas de canciones
 ipcMain.handle('get-settings', () => {
   try {
     if (fs.existsSync(CONFIG_PATH)) {
